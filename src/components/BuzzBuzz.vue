@@ -28,32 +28,42 @@
 <script>
 import { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput } from 'quasar'
 
+// TODO: change to import
+let Chance = require('chance')
+let chance = new Chance()
+
 export default {
-  name: 'index',
+  name: 'BuzzBuzz',
   components: { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput },
   data: () => {
     return {
-      wsAddr: '',
+      // TODO: save in cookie?
+      wsAddr: 'ws://',
       name: '',
       bigButton: { width: '50px', height: '50px' }
     }
   },
   methods: {
     sendToWs () {
-      // TODO: Initialize once when wsAddr is changed.
-      let socket = new WebSocket(this.wsAddr)
-      socket.onopen = () => {
-        socket.send(this.name)
-      }
-      socket.onmessage = (event) => {
-        // TODO: Works for now, will be shit for more complex return data
-        if (event.data === 'true') {
-          // TODO: Winning indication
-          console.log('nice')
-        } else {
-          // TODO: Winning indication
-          console.log('too bad')
+      if (this.wsAddr.length > 5) {
+        // TODO: Initialize once when wsAddr is changed.
+        let socket = new WebSocket(this.wsAddr)
+        socket.onopen = () => {
+          socket.send(this.name)
         }
+        socket.onmessage = (event) => {
+          // TODO: Works for now, will be shit for more complex return data
+          if (event.data === 'true') {
+            // TODO: Winning indication
+            console.log('nice')
+          } else {
+            // TODO: Winning indication
+            console.log('too bad')
+          }
+        }
+      } else {
+        // TODO: Missing ws ip indication
+        console.log('set ws!')
       }
     },
     setBigButton (event) {
@@ -66,6 +76,7 @@ export default {
     window.addEventListener('resize', this.setBigButton)
   },
   mounted () {
+    this.name = chance.name({ nationality: "it" })
     this.$nextTick(() => {
       window.addEventListener('resize', this.setBigButton)
       this.setBigButton(null)
