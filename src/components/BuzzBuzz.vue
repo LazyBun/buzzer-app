@@ -12,7 +12,14 @@
 
     <div slot="left">
       <q-list no-border inset-delimiter>
-        <q-input v-model="wsAddr" float-label="Ws Address"/>
+        <div class="row justify-center items-center">
+          <div class="col-8">
+            <q-input v-model="wsAddr" float-label="Ws Address"/>
+          </div>
+          <div class="col-4">
+            <q-btn color="primary" @click="setWs"> Set </q-btn>
+          </div>
+        </div>
         <q-input v-model="name" float-label="Name"/>
       </q-list>
     </div>
@@ -40,18 +47,18 @@ export default {
       // TODO: save in cookie?
       wsAddr: 'ws://',
       name: '',
-      bigButton: { width: '50px', height: '50px' }
+      bigButton: { width: '50px', height: '50px' },
+      socket: null
     }
   },
   methods: {
     sendToWs () {
-      if (this.wsAddr.length > 5) {
+      if (this.socket && this.wsAddr.length > 5) {
         // TODO: Initialize once when wsAddr is changed.
-        let socket = new WebSocket(this.wsAddr)
-        socket.onopen = () => {
-          socket.send(this.name)
+        this.socket.onopen = () => {
+          this.socket.send(this.name)
         }
-        socket.onmessage = (event) => {
+        this.socket.onmessage = (event) => {
           // TODO: Works for now, will be shit for more complex return data
           if (event.data === 'true') {
             // TODO: Winning indication
@@ -62,7 +69,7 @@ export default {
           }
         }
       } else {
-        // TODO: Missing ws ip indication
+         // TODO: Missing ws ip indication
         console.log('set ws!')
       }
     },
@@ -70,6 +77,12 @@ export default {
       let num = document.documentElement.clientWidth < document.documentElement.clientHeight ? document.documentElement.clientWidth / 2
         : document.documentElement.clientHeight / 2
       this.bigButton = { width: num + 'px', height: num + 'px' }
+    },
+    setWs() {
+      if (this.wsAddr.length > 5) {
+        // TODO: If error then indicate. Spinner when loading
+        this.socket = new WebSocket(this.wsAddr)
+      }
     }
   },
   beforeDestroy () {

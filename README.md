@@ -1,6 +1,6 @@
-# Quasar App
+# Buzzer App
 
-> A Quasar project
+Simple application with big red button which sends message with name to specified ws endpoint.
 
 ## Build Setup
 
@@ -13,7 +13,6 @@ $ quasar dev
 
 # build for production with minification
 $ quasar build
-
-# lint code
-$ quasar lint
 ```
+
+## TODO
