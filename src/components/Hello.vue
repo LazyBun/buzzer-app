@@ -45,6 +45,16 @@ export default {
       socket.onopen = () => {
         socket.send(this.name)
       }
+      socket.onmessage = (event) => {
+        // TODO: Works for now, will be shit for more complex return data
+        if (event.data === 'true') {
+          // TODO: Winning indication
+          console.log('nice')
+        } else {
+          // TODO: Winning indication
+          console.log('too bad')
+        }
+      }
     },
     setBigButton (event) {
       let num = document.documentElement.clientWidth < document.documentElement.clientHeight ? document.documentElement.clientWidth / 2
