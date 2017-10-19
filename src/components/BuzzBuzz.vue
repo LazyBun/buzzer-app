@@ -17,9 +17,10 @@
             <q-input v-model="wsAddr" float-label="Ws Address"/>
           </div>
           <div class="col-4">
-            <q-btn color="primary" @click="setWs"> Set </q-btn>
+            <q-btn style="width:100%" color="primary" @click="setWs"> Set </q-btn>
           </div>
         </div>
+        <!-- TODO: move name to top panel -->
         <q-input v-model="name" float-label="Name"/>
       </q-list>
     </div>
@@ -53,21 +54,8 @@ export default {
   },
   methods: {
     sendToWs () {
-      if (this.socket && this.wsAddr.length > 5) {
-        // TODO: Initialize once when wsAddr is changed.
-        this.socket.onopen = () => {
-          this.socket.send(this.name)
-        }
-        this.socket.onmessage = (event) => {
-          // TODO: Works for now, will be shit for more complex return data
-          if (event.data === 'true') {
-            // TODO: Winning indication
-            console.log('nice')
-          } else {
-            // TODO: Winning indication
-            console.log('too bad')
-          }
-        }
+      if (this.socket) {
+        this.socket.send(this.name)
       } else {
          // TODO: Missing ws ip indication
         console.log('set ws!')
@@ -82,6 +70,20 @@ export default {
       if (this.wsAddr.length > 5) {
         // TODO: If error then indicate. Spinner when loading
         this.socket = new WebSocket(this.wsAddr)
+        // TODO: Add this in - atm it would trigger game win
+        // this.socket.onopen = () => {
+        //   this.socket.send("Connected: " + this.name)
+        // }
+        this.socket.onmessage = (event) => {
+          // TODO: Works for now, will be shit for more complex return data
+          if (event.data === 'true') {
+            // TODO: Winning indication
+            console.log('nice')
+          } else {
+            // TODO: Winning indication
+            console.log('too bad')
+          }
+        }
       }
     }
   },
