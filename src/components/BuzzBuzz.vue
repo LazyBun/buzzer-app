@@ -6,7 +6,7 @@
       </q-btn>
 
       <q-toolbar-title>
-        Buzz Buzz
+        {{ name }} - Buzzer
       </q-toolbar-title>
     </q-toolbar>
 
@@ -20,7 +20,6 @@
             <q-btn style="width:100%" color="primary" @click="setWs"> Set </q-btn>
           </div>
         </div>
-        <!-- TODO: move name to top panel -->
         <q-input v-model="name" float-label="Name"/>
       </q-list>
     </div>
@@ -34,31 +33,59 @@
 </template>
 
 <script>
-import { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput } from 'quasar'
+import { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput, Toast, Cookies } from 'quasar'
 
 // TODO: change to import
 let Chance = require('chance')
 let chance = new Chance()
 
+let WS_COOKIE = 'buzzer_ws_cookie'
+let NAME_COOKIE = 'buzzer_name_cookie'
+
 export default {
   name: 'BuzzBuzz',
-  components: { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput },
+  components: { QLayout, QToolbar, QToolbarTitle, QBtn, QIcon, QList, QListHeader, QItem, QItemSide, QItemMain, QInput, Toast, Cookies },
   data: () => {
     return {
-      // TODO: save in cookie?
       wsAddr: 'ws://',
       name: '',
       bigButton: { width: '50px', height: '50px' },
       socket: null
     }
   },
+  watch: {
+    wsAddr: (val) => {
+      Cookies.set(WS_COOKIE, val)
+    },
+    name: (val) => {
+      Cookies.set(NAME_COOKIE, val)
+    }
+  },
   methods: {
     sendToWs () {
       if (this.socket) {
-        this.socket.send(this.name)
+        switch(this.socket.readyState) {
+          case this.socket.OPEN:
+            this.socket.send("win:" + this.name); break;
+          case this.socket.CONNECTING:
+            Toast.create.warning({
+              html: '<span style="color: black">Still connecting to websocket.</span>',
+              timeout: 2000
+            })
+            break;
+          case this.socket.CLOSING:
+          case this.socket.CLOSED:
+            Toast.create.negative({
+              html: 'Connection either closing or closed. Reconnect by setting address again.',
+              timeout: 2000
+            })
+            break;  
+        }
       } else {
-         // TODO: Missing ws ip indication
-        console.log('set ws!')
+        Toast.create.negative({
+          html: 'Set server address.',
+          timeout: 5000
+        })
       }
     },
     setBigButton (event) {
@@ -66,32 +93,49 @@ export default {
         : document.documentElement.clientHeight / 2
       this.bigButton = { width: num + 'px', height: num + 'px' }
     },
-    setWs() {
+    async setWs() {
       if (this.wsAddr.length > 5) {
-        // TODO: If error then indicate. Spinner when loading
-        this.socket = new WebSocket(this.wsAddr)
-        // TODO: Add this in - atm it would trigger game win
-        // this.socket.onopen = () => {
-        //   this.socket.send("Connected: " + this.name)
-        // }
-        this.socket.onmessage = (event) => {
-          // TODO: Works for now, will be shit for more complex return data
-          if (event.data === 'true') {
-            // TODO: Winning indication
-            console.log('nice')
-          } else {
-            // TODO: Winning indication
-            console.log('too bad')
-          }
+        this.socket = await new WebSocket(this.wsAddr)
+        this.socket.onopen = () => {
+          this.socket.send("connect:" + this.name)
         }
+        this.socket.onmessage = this.handleOnMessage
+      }
+    },
+    handleOnMessage(event) {
+      // TODO: Investigate why switch/case does not work (most likely something with == vs ===)
+      // TODO: Better win/lose indication, for now - toast
+      if (event.data === 'won') {
+        Toast.create.positive({
+          html: 'Winner winner, chicken dinner',
+          timeout: 1000
+        })
+      } else if (event.data === 'lost') {
+        Toast.create.negative({
+          html: 'Bzzzzzzz',
+          timeout: 500
+        })
+      } else if (event.data === 'connected') {
+        Toast.create.positive({
+          html: 'Connected!',
+          timeout: 500
+        })
+      } else {
+        Toast.create.negative({
+          html: 'Unhandled or bad message sent. Please leave issue at <a href="https://github.com/LazyBun/buzzer-app">repository</a>',
+          timeout: 3000
+        })
       }
     }
+
   },
   beforeDestroy () {
     window.addEventListener('resize', this.setBigButton)
   },
   mounted () {
-    this.name = chance.name({ nationality: "it" })
+    if (Cookies.has(WS_COOKIE)) { this.wsAddr = Cookies.get(WS_COOKIE); this.setWs() }
+    this.name = Cookies.has(NAME_COOKIE) ? Cookies.get(NAME_COOKIE) : chance.name({ nationality: "it" })
+
     this.$nextTick(() => {
       window.addEventListener('resize', this.setBigButton)
       this.setBigButton(null)
